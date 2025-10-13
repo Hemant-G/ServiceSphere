@@ -49,49 +49,34 @@
 
 ## 🌐 Production Deployment
 
-### Backend Deployment (Render/Heroku)
+### Unified Deployment (Vercel)
 
-1. **Prepare Backend**
-   ```bash
-   cd backend
-   # Ensure all dependencies are in package.json
-   npm install --production
-   ```
+This project is configured for a unified monorepo deployment on Vercel. The `vercel.json` file in the root directory handles the build and routing for both the frontend and backend.
 
-2. **Environment Variables**
-   ```env
-   NODE_ENV=production
-   PORT=5000
-   MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/serviceSphere
-   JWT_SECRET=your-super-secret-jwt-key-here
-   ```
+1.  **Push to GitHub**: Ensure your latest code, including `vercel.json`, is pushed to your GitHub repository.
 
-3. **Deploy to Render**
-   - Connect GitHub repository
-   - Set build command: `npm install`
-   - Set start command: `npm start`
-   - Add environment variables
-   - Deploy
+2.  **Import Project on Vercel**:
+    -   Go to your Vercel Dashboard and click "Add New... > Project".
+    -   Import your `ServiceSphere` repository from GitHub.
+    -   Vercel will automatically use the `vercel.json` file for configuration. The "Root Directory" should remain as the project root.
 
-### Frontend Deployment (Netlify/Vercel)
+3.  **Add Environment Variables**:
+    In your Vercel project's "Settings" -> "Environment Variables", add the following. These variables will be available to both the frontend build process and the backend serverless function.
 
-1. **Build Frontend**
-   ```bash
-   cd frontend
-   npm run build
-   ```
+    | Name | Value |
+    | --- | --- |
+    | `MONGO_URI` | Your **production** MongoDB Atlas connection string. |
+    | `JWT_SECRET` | A long, complex, and random string for production. |
+    | `NODE_ENV` | `production` |
+    | `REACT_APP_API_URL` | Your full production Vercel URL, e.g., `https://your-app-name.vercel.app/api` |
 
-2. **Environment Variables**
-   ```env
-   REACT_APP_API_URL=https://your-backend-url.com/api
-   ```
+4.  **Deploy**:
+    -   Click the "Deploy" button.
+    -   Vercel will install dependencies for both `frontend` and `backend`, build the frontend, and create the backend serverless functions.
 
-3. **Deploy to Netlify**
-   - Connect GitHub repository
-   - Set build command: `npm run build`
-   - Set publish directory: `build`
-   - Add environment variables
-   - Deploy
+### Important Note on File Uploads
+
+The local file upload system using `multer` and the `uploads/` directory will **not** work on Vercel's serverless environment. For production, you must refactor the file upload logic to use a cloud storage provider like **AWS S3**, **Cloudinary**, or **Google Cloud Storage**.
 
 ### Database Setup (MongoDB Atlas)
 
@@ -102,7 +87,7 @@
 
 2. **Update Backend Environment**
    ```env
-   MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/serviceSphere?retryWrites=true&w=majority
+   # Add your Atlas connection string to Vercel's environment variables
    ```
 
 ## 🔧 Configuration
