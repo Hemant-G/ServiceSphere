@@ -48,6 +48,11 @@ const serviceSchema = new mongoose.Schema({
     },
     coordinates: {
       type: [Number], // [longitude, latitude]
+      // Coordinates are required if a location is provided.
+      required: function() {
+        // 'this' refers to the location object. We check if the parent document has a location field set.
+        return this.parent().location && Object.keys(this.parent().location).length > 0;
+      }
     },
   }
 }, {

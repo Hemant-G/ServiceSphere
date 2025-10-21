@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const connectDB = require('./config/db');
 const errorHandler = require('./middleware/errorHandler');
+const fs = require('fs');
 
 // Load env vars
 dotenv.config();
@@ -27,8 +28,15 @@ app.use(express.json());
 // Enable CORS
 app.use(cors());
 
-// Set static folder for uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// For Vercel's temporary filesystem, we need to create the upload dir if it doesn't exist
+// and serve files from the /tmp directory.
+const uploadsDir = path.join('/tmp', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Set static folder for uploads, pointing to the correct temporary directory
+app.use('/uploads', express.static(uploadsDir));
 
 // Mount routers
 app.use('/api/auth', authRoutes);

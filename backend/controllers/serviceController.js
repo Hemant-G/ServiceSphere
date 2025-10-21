@@ -43,14 +43,16 @@ const getAllServices = async (req, res, next) => {
     if (req.query.lat && req.query.lon) {
       const latitude = parseFloat(req.query.lat);
       const longitude = parseFloat(req.query.lon);
-      const radius = (parseFloat(req.query.distance) || 10) / 3963.2; // Convert distance (miles) to radians
-
-      query = query.where('location').within({ 
-        center: [longitude, latitude],
-        radius: radius,
-        unique: true,
-        spherical: true
-      });
+      const distanceInMiles = parseFloat(req.query.distance) || 10;
+      // Earth's radius in miles
+      const earthRadiusMiles = 3963.2;
+      const radius = distanceInMiles / earthRadiusMiles;
+ 
+      // Use MongoDB's native $geoWithin and $centerSphere for clarity and performance
+      const geoQuery = {
+        location: { $geoWithin: { $centerSphere: [[longitude, latitude], radius] } }
+      };
+      query = query.where(geoQuery);
     } 
     // Priority 2: Text-based location search if no coordinates
     else if (req.query.location) {
