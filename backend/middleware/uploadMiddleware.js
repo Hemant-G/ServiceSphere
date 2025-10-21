@@ -2,9 +2,12 @@ const multer = require('multer');
 const path = require('path');
 
 // Set storage engine
+// NOTE: Vercel's serverless environment has a read-only filesystem, except for the /tmp directory.
+// We are using /tmp for uploads. This is temporary storage.
 const storage = multer.diskStorage({
-  destination: './uploads/',
+  destination: '/tmp/uploads',
   filename: function (req, file, cb) {
+    // The /tmp/uploads directory may not exist, so we should ensure it's created.
     cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
   },
 });
