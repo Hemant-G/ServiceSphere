@@ -146,11 +146,20 @@ const getServiceById = async (req, res, next) => {
 const createService = async (req, res, next) => {
   try {
     req.body.provider = req.user.id;
+    const { latitude, longitude } = req.body;
 
-    // Get provider's location and add it to the service
-    const provider = await User.findById(req.user.id).select('location address');
-    if (provider && provider.location) {
-      req.body.location = provider.location;
+    // If location coordinates are provided in the form, use them.
+    if (latitude && longitude) {
+      req.body.location = {
+        type: 'Point',
+        coordinates: [parseFloat(longitude), parseFloat(latitude)],
+      };
+    } else {
+      // Otherwise, fall back to the provider's profile location.
+      const provider = await User.findById(req.user.id).select('location');
+      if (provider && provider.location && provider.location.coordinates?.length) {
+        req.body.location = provider.location;
+      }
     }
 
     let service = await Service.create(req.body);
@@ -178,6 +187,16 @@ const updateService = async (req, res, next) => {
     // Make sure user is service owner
     if (service.provider.toString() !== req.user.id) {
       return res.status(401).json({ success: false, message: 'Not authorized to update this service' });
+    }
+
+    const { latitude, longitude } = req.body;
+
+    // Handle location update from the form
+    if (latitude && longitude) {
+      req.body.location = {
+        type: 'Point',
+        coordinates: [parseFloat(longitude), parseFloat(latitude)],
+      };
     }
 
     service = await Service.findByIdAndUpdate(req.params.id, req.body, {

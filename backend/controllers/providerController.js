@@ -32,13 +32,27 @@ const getProviderProfile = async (req, res, next) => {
 // @access  Private (Provider only)
 const updateProviderProfile = async (req, res, next) => {
   try {
-    const { name, phone, address, avatar } = req.body;
+    const { name, phone, address, avatar, latitude, longitude } = req.body;
+    const updateData = { name, phone, address, avatar };
 
-    const provider = await User.findByIdAndUpdate(
-      req.user.id,
-      { name, phone, address, avatar },
-      { new: true, runValidators: true }
-    ).select('-password');
+    // Handle location update
+    if (latitude && longitude) {
+      // Ensure latitude and longitude are valid numbers
+      const lat = parseFloat(latitude);
+      const lon = parseFloat(longitude);
+
+      if (!isNaN(lat) && !isNaN(lon)) {
+        updateData.location = {
+          type: 'Point',
+          coordinates: [lon, lat],
+        };
+      }
+    }
+
+    const provider = await User.findByIdAndUpdate(req.user.id, updateData, {
+      new: true,
+      runValidators: true,
+    }).select('-password');
 
     res.json({
       success: true,

@@ -152,11 +152,13 @@ const updateProfile = async (req, res, next) => {
     if (email) updateData.email = email;
     if (phone) updateData.phone = phone;
     if (address) {
-      // Ensure address fields are set individually to avoid overwriting with empty values
-      if (address.street) updateData['address.street'] = address.street;
-      if (address.city) updateData['address.city'] = address.city;
-      if (address.state) updateData['address.state'] = address.state;
-      if (address.zipCode) updateData['address.zipCode'] = address.zipCode;
+      // Use dot notation to update nested address fields without overwriting the whole object
+      // This prevents fields from being wiped if only partial address is sent
+      Object.keys(address).forEach(key => {
+        if (address[key]) {
+          updateData[`address.${key}`] = address[key];
+        }
+      });
     }
 
     // Handle location update
