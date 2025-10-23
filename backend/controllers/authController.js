@@ -145,7 +145,7 @@ const getMe = async (req, res, next) => {
 // @access  Private
 const updateProfile = async (req, res, next) => {
   try {
-    const { name, email, phone, address, latitude, longitude } = req.body;
+    const { name, email, phone, address } = req.body;
     const updateData = {};
 
     if (name) updateData.name = name;
@@ -161,14 +161,6 @@ const updateProfile = async (req, res, next) => {
       });
     }
 
-    // Handle location update
-    if (latitude && longitude) {
-      updateData.location = {
-        type: 'Point',
-        coordinates: [parseFloat(longitude), parseFloat(latitude)],
-      };
-    }
-    
     // Check if a file was uploaded
     if (req.file) {
       // The path should be accessible by the frontend, e.g., /uploads/filename.jpg

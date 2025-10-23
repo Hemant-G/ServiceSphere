@@ -44,16 +44,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: '/uploads/default-avatar.png',
   },
-  location: {
-    type: {
-      type: String,
-      enum: ['Point'],
-    },
-    coordinates: {
-      type: [Number], // [longitude, latitude]
-    },
-    formattedAddress: String,
-  },
   isActive: {
     type: Boolean,
     default: true,
@@ -76,7 +66,6 @@ const userSchema = new mongoose.Schema({
 });
 
 // Add geospatial index
-userSchema.index({ location: '2dsphere' });
 userSchema.index({ 'address.city': 'text', 'address.zipCode': 'text' });
 
 // Encrypt password using bcrypt

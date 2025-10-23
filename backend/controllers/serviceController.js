@@ -25,11 +25,11 @@ const getAllServices = async (req, res, next) => {
     const reqQuery = { ...req.query };
 
     // Fields to exclude
-    const removeFields = ['select', 'sort', 'page', 'limit', 'lat', 'lon', 'distance', 'location'];
+    const removeFields = ['select', 'sort', 'page', 'limit', 'location'];
 
     // Loop over removeFields and delete them from reqQuery
     removeFields.forEach(param => delete reqQuery[param]);
-    
+
     // Create query string
     let queryStr = JSON.stringify(reqQuery);
 
@@ -38,30 +38,13 @@ const getAllServices = async (req, res, next) => {
 
     let query = Service.find(JSON.parse(queryStr));
 
-    // Handle location filtering
-    // Priority 1: Geospatial search if coordinates are provided
-    if (req.query.lat && req.query.lon) {
-      const latitude = parseFloat(req.query.lat);
-      const longitude = parseFloat(req.query.lon);
-      const distanceInMiles = parseFloat(req.query.distance) || 10;
-      // Earth's radius in miles
-      const earthRadiusMiles = 3963.2;
-      const radius = distanceInMiles / earthRadiusMiles;
- 
-      // Use MongoDB's native $geoWithin and $centerSphere for clarity and performance
-      const geoQuery = {
-        location: { $geoWithin: { $centerSphere: [[longitude, latitude], radius] } }
-      };
-      query = query.where(geoQuery);
-    } 
-    // Priority 2: Text-based location search if no coordinates
-    else if (req.query.location) {
-      // Find providers in the specified location first
-      const providersInLocation = await User.find({
+    // Text-based location search
+    if (req.query.location) {
+      // Search for services with a matching city in their address.
+      // This is more accurate as services can have different locations than their provider's primary address.
+      query = query.where({
         'address.city': { $regex: `^${req.query.location}`, $options: 'i' }
-      }).select('_id');
-      const providerIds = providersInLocation.map(p => p._id);
-      query = query.where('provider').in(providerIds);
+      });
     }
 
     // Select Fields
@@ -146,23 +129,20 @@ const getServiceById = async (req, res, next) => {
 const createService = async (req, res, next) => {
   try {
     req.body.provider = req.user.id;
-    const { latitude, longitude } = req.body;
+    const { address, ...serviceData } = req.body;
 
-    // If location coordinates are provided in the form, use them.
-    if (latitude && longitude) {
-      req.body.location = {
-        type: 'Point',
-        coordinates: [parseFloat(longitude), parseFloat(latitude)],
-      };
+    // If an address is provided in the form, use it.
+    if (address) {
+      serviceData.address = address;
     } else {
       // Otherwise, fall back to the provider's profile location.
-      const provider = await User.findById(req.user.id).select('location');
-      if (provider && provider.location && provider.location.coordinates?.length) {
-        req.body.location = provider.location;
+      const provider = await User.findById(req.user.id).select('address');
+      if (provider && provider.address) {
+        serviceData.address = provider.address;
       }
     }
 
-    let service = await Service.create(req.body);
+    let service = await Service.create(serviceData);
     
     // Populate provider details in the response
     service = await service.populate('provider', 'name averageRating address');
@@ -189,17 +169,14 @@ const updateService = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Not authorized to update this service' });
     }
 
-    const { latitude, longitude } = req.body;
+    const { address, ...updateData } = req.body;
 
-    // Handle location update from the form
-    if (latitude && longitude) {
-      req.body.location = {
-        type: 'Point',
-        coordinates: [parseFloat(longitude), parseFloat(latitude)],
-      };
+    // Handle address update from the form
+    if (address) {
+      updateData.address = address;
     }
 
-    service = await Service.findByIdAndUpdate(req.params.id, req.body, {
+    service = await Service.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true
     });

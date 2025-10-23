@@ -3,8 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useService } from '../context/ServiceContext';
 import { SERVICE_CATEGORIES } from '../utils/constants';
 import ServiceCard from '../components/ServiceCard';
-import { FiSearch, FiMapPin } from 'react-icons/fi';
-import { useLocationContext } from '../context/LocationContext';
+import { FiSearch } from 'react-icons/fi';
 
 const Services = () => {
   const { 
@@ -16,12 +15,6 @@ const Services = () => {
     clearFilters,
     pagination = { total: 0, pages: 0, page: 1 }
   } = useService();
-  const { 
-    location, 
-    getLocation, 
-    isLoading: isLocationLoading, 
-    error: locationError 
-  } = useLocationContext();
 
   const locationUrl = useLocation();
   const navigate = useNavigate();
@@ -31,48 +24,42 @@ const Services = () => {
   const [priceRange, setPriceRange] = useState({ min: '', max: '' });
   const [rating, setRating] = useState(''); 
   const [locationFilter, setLocationFilter] = useState('');
-  const [distance, setDistance] = useState(25); // Default distance in miles
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
 
   useEffect(() => {
-    // This effect now handles all filter initialization and fetching
+    // This effect handles filter initialization from URL and fetches services on load or URL change.
     const queryParams = new URLSearchParams(locationUrl.search);
-    const categoryFromUrl = queryParams.get('category') || '';
-    
-    // FIX: Standardize the category to lowercase to prevent case-mismatch filtering issues
-    const standardizedCategory = categoryFromUrl.toLowerCase();
+    const page = queryParams.get('page') || 1;
+    const limit = queryParams.get('limit') || 12;
+    const category = (queryParams.get('category') || '').toLowerCase();
+    const search = queryParams.get('search') || '';
+    const minPrice = queryParams.get('minPrice') || '';
+    const maxPrice = queryParams.get('maxPrice') || '';
+    const ratingParam = queryParams.get('rating') || '';
+    const locationParam = queryParams.get('location') || '';
+    const sort = queryParams.get('sort') || 'createdAt';
+    const order = queryParams.get('order') || 'desc';
 
-    // Reset local state to defaults
-    setSelectedCategory(standardizedCategory); // Set standardized category from URL
-    setPriceRange({ min: '', max: '' });
-    setRating('');
-    setLocationFilter('');
-    setSortBy('createdAt');
-    setSortOrder('desc');
+    // Update local state from URL
+    setSelectedCategory(category);
+    setSearchTerm(search);
+    setPriceRange({ min: minPrice, max: maxPrice });
+    setRating(ratingParam);
+    setLocationFilter(locationParam);
+    setSortBy(sort);
+    setSortOrder(order);
 
-    // Update context state
-    setCategory(standardizedCategory);
-    setSearchQuery('');
+    // Update context state for consistency
+    setCategory(category);
+    setSearchQuery(search);
 
-    // Fetch services with the correct, clean state
-    fetchServices({
-      page: 1,
-      limit: 12,
-      category: standardizedCategory, // Use standardized category
-    });
+    // Fetch services using parameters from the URL
+    const fetchParams = Object.fromEntries(queryParams.entries());
+    fetchServices({ page, limit, ...fetchParams });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locationUrl.search]);
-
-  // Effect to auto-fill location filter when geolocation is successful
-  useEffect(() => {
-    if (location && location.address) {
-      // Use city, town, or village from the reverse geocoding result
-      const city = location.address.city || location.address.town || location.address.village || '';
-      setLocationFilter(city);
-    }
-  }, [location]);
+  }, [locationUrl.search, fetchServices, setCategory, setSearchQuery]);
 
   // Handle changes for non-URL filters
   const handleFilterChange = (setter, value) => {
@@ -81,20 +68,19 @@ const Services = () => {
   
   // Handle category change (triggers URL update and then useEffect)
   const handleCategoryChange = (categoryValue) => {
-    // FIX: Standardize the category to lowercase before updating the URL
     const standardizedCategory = categoryValue.toLowerCase();
-
-    // 1. Update URL/Navigate
     const newSearchParams = new URLSearchParams(locationUrl.search);
+
     if (standardizedCategory === 'all' || !standardizedCategory) {
       newSearchParams.delete('category');
     } else {
       newSearchParams.set('category', standardizedCategory);
     }
+    newSearchParams.set('page', '1'); // Reset to first page on category change
     
-    // Note: The navigate will trigger the useEffect above, which does the actual fetch.
+    // The navigate call will trigger the main useEffect to re-fetch with new params.
     navigate({
-      search: newSearchParams.toString(),
+      search: newSearchParams.toString()
     });
   };
 
@@ -112,9 +98,6 @@ const Services = () => {
       maxPrice: priceRange.max,
       rating,
       location: locationFilter,
-      lat: location?.latitude,
-      distance: location ? distance : undefined,
-      lon: location?.longitude,
       sort: sortBy,
       order: sortOrder
     });
@@ -131,9 +114,6 @@ const Services = () => {
       maxPrice: priceRange.max,
       rating,
       location: locationFilter,
-      lat: location?.latitude,
-      distance: location ? distance : undefined,
-      lon: location?.longitude,
       sort: sortBy,
       order: sortOrder
     });
@@ -174,9 +154,6 @@ const Services = () => {
       maxPrice: priceRange.max,
       rating,
       location: locationFilter,
-      lat: location?.latitude,
-      distance: location ? distance : undefined,
-      lon: location?.longitude,
       sort: field,
       order: order
     });
@@ -194,9 +171,6 @@ const Services = () => {
         maxPrice: priceRange.max,
         rating,
         location: locationFilter,
-        lat: location?.latitude,
-        distance: location ? distance : undefined,
-        lon: location?.longitude,
         sort: sortBy,
         order: sortOrder
       });
@@ -302,37 +276,6 @@ const Services = () => {
                   onChange={(e) => handleFilterChange(setLocationFilter, e.target.value)}
                   className="w-full p-2 bg-input border border-border rounded-md text-sm focus:ring-ring focus:border-primary"
                 />
-              </div>
-
-              {/* Geolocation Filter */}
-              <div className="mb-6 border-t border-border pt-4">
-                <h3 className="font-medium text-card-foreground mb-2">Distance</h3>
-                <button
-                  onClick={getLocation}
-                  disabled={isLocationLoading}
-                  className="w-full flex items-center justify-center p-2 border border-border rounded-md text-sm hover:bg-secondary disabled:opacity-50"
-                >
-                  <FiMapPin className="w-4 h-4 mr-2" />
-                  {isLocationLoading ? 'Getting Location...' : 'Use My Current Location'}
-                </button>
-                {location && <p className="text-xs text-green-400 mt-2 text-center">Location captured!</p>}
-                {locationError && <p className="text-xs text-destructive mt-2 text-center">{locationError}</p>}
-                {location && (
-                  <div className="mt-4">
-                    <label htmlFor="distance" className="block text-sm font-medium text-muted-foreground mb-1">
-                      Within {distance} miles
-                    </label>
-                    <input
-                      id="distance"
-                      type="range"
-                      min="1"
-                      max="100"
-                      value={distance}
-                      onChange={(e) => setDistance(e.target.value)}
-                      className="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
-                    />
-                  </div>
-                )}
               </div>
 
               <div className="flex flex-col gap-3 border-t border-border pt-4">

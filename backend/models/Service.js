@@ -1,6 +1,13 @@
 const mongoose = require('mongoose');
 const { PREDEFINED_SERVICES } = require('../utils/serviceConstants');
 
+const addressSchema = new mongoose.Schema({
+  street: String,
+  city: String,
+  state: String,
+  zipCode: String,
+}, { _id: false });
+
 const serviceSchema = new mongoose.Schema({
   provider: {
     type: mongoose.Schema.Types.ObjectId,
@@ -40,23 +47,9 @@ const serviceSchema = new mongoose.Schema({
     type: String,
     default: 'Mon-Fri, 9am-5pm'
   },
-  location: {
-    type: {
-      type: String,
-      default: 'Point',
-      enum: ['Point'],
-    },
-    coordinates: {
-      type: [Number], // [longitude, latitude]
-      // Coordinates are required if a location is provided.
-      index: '2dsphere' // Ensure geospatial index for coordinates
-    },
-  }
+  address: addressSchema
 }, {
   timestamps: true
 });
-
-// Add geospatial index
-// serviceSchema.index({ location: '2dsphere' }); // Index is now on coordinates directly
 
 module.exports = mongoose.model('Service', serviceSchema);
