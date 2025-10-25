@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { authAPI } from '../utils/api';
+import { resolveImageUrl } from '../utils/media';
 import FileUpload from '../components/FileUpload';
 
 const Profile = () => {
@@ -86,34 +87,45 @@ const Profile = () => {
               Update Profile
             </button>
           </form>
+
+          <div className="mt-8">
+            <h2 className="text-xl font-bold mb-4">Change Password</h2>
+            <form onSubmit={handleChangePassword}>
+              <div className="mb-4">
+                <label className="block text-gray-700">Current Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700">New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg"
+                />
+              </div>
+              <button type="submit" className="bg-primary-600 text-white px-4 py-2 rounded-lg">
+                Change Password
+              </button>
+            </form>
+          </div>
         </div>
+
         <div>
-          <h2 className="text-xl font-bold mb-4">Change Password</h2>
-          <form onSubmit={handleChangePassword}>
-            <div className="mb-4">
-              <label className="block text-gray-700">Current Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 border rounded-lg"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700">New Password</label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full px-4 py-2 border rounded-lg"
-              />
-            </div>
-            <button type="submit" className="bg-primary-600 text-white px-4 py-2 rounded-lg">
-              Change Password
-            </button>
-          </form>
-        </div>
-        <div>
+          <h2 className="text-xl font-bold mb-4">Current Avatar</h2>
+          <div className="mt-2 mb-6">
+            {user?.avatar ? (
+              <img src={resolveImageUrl(user.avatar)} alt="avatar" className="h-24 w-24 rounded-full object-cover" />
+            ) : (
+              <div className="h-24 w-24 rounded-full bg-gray-200" />
+            )}
+          </div>
+
           <h2 className="text-xl font-bold mb-4">Update Avatar</h2>
           <FileUpload onFileSelect={handleAvatarUpload} />
         </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { resolveImageUrl } from '../utils/media';
 import { APP_CONFIG, USER_ROLE_LABELS } from '../utils/constants';
 
 const Navbar = () => {
@@ -76,9 +77,9 @@ const Navbar = () => {
                   className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
                 >
                   <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
-                    {user?.avatar ? (
-                      <img
-                        src={user.avatar}
+            {user?.avatar ? (
+              <img
+                src={resolveImageUrl(user.avatar)}
                         alt={user.name}
                         className="h-8 w-8 rounded-full object-cover"
                       />

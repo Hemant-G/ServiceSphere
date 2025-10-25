@@ -1,5 +1,5 @@
 import React from 'react';
-import { API_ROOT } from '../utils/constants';
+import { resolveImageUrl } from '../utils/media';
 import { Link } from 'react-router-dom';
 import { FiFileText } from 'react-icons/fi';
 
@@ -11,7 +11,7 @@ const PortfolioCard = ({ portfolioItem }) => {
         {portfolioItem.images && portfolioItem.images.length > 0 ? (
           <div className="relative h-full">
             <img
-              src={`${API_ROOT}${portfolioItem.images[0]}`}
+              src={resolveImageUrl(portfolioItem.images && portfolioItem.images[0])}
               alt={portfolioItem.title}
               className="w-full h-full object-cover"
             />

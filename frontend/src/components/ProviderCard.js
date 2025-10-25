@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { resolveImageUrl } from '../utils/media';
 
 const ProviderCard = ({ provider }) => {
   return (
@@ -8,7 +9,7 @@ const ProviderCard = ({ provider }) => {
       <div className="h-32 bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center">
         {provider.avatar ? (
           <img
-            src={provider.avatar}
+            src={resolveImageUrl(provider.avatar)}
             alt={provider.name}
             className="h-20 w-20 rounded-full object-cover border-4 border-white shadow-md"
           />

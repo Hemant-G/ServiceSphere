@@ -1,4 +1,16 @@
 const User = require('../models/User');
+const cloudinary = require('../config/cloudinary');
+const streamifier = require('streamifier');
+
+const uploadBufferToCloudinary = (buffer, filename, folder = 'avatars') => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream({ folder, public_id: filename.split('.')[0] }, (err, result) => {
+      if (err) return reject(err);
+      resolve(result);
+    });
+    streamifier.createReadStream(buffer).pipe(stream);
+  });
+};
 const Service = require('../models/Service');
 const Booking = require('../models/Booking');
 const Review = require('../models/Review');
@@ -32,8 +44,18 @@ const getProviderProfile = async (req, res, next) => {
 // @access  Private (Provider only)
 const updateProviderProfile = async (req, res, next) => {
   try {
-    const { name, phone, address, avatar } = req.body;
-    const updateData = { name, phone, address, avatar };
+    const { name, phone, address } = req.body;
+    const updateData = { name, phone, address };
+
+    // If a file was uploaded (multer memoryStorage), upload to Cloudinary
+    if (req.file && req.file.buffer) {
+      try {
+        const result = await uploadBufferToCloudinary(req.file.buffer, req.file.originalname, `avatars/${req.user.id}`);
+        updateData.avatar = { url: result.secure_url, public_id: result.public_id };
+      } catch (e) {
+        return res.status(500).json({ success: false, message: 'Failed to upload avatar' });
+      }
+    }
 
     const provider = await User.findByIdAndUpdate(req.user.id, updateData, {
       new: true,

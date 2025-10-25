@@ -53,7 +53,10 @@ const bookingSchema = new mongoose.Schema({
     required: [true, 'Please provide contact phone number']
   },
   customerImages: {
-    type: [String],
+    type: [{
+      url: String,
+      public_id: String
+    }],
     default: []
   },
   // Payment related fields (placeholder for future integration)

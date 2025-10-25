@@ -1,6 +1,22 @@
 const PortfolioItem = require('../models/PortfolioItem');
 const path = require('path');
 const fs = require('fs');
+const cloudinary = require('../config/cloudinary');
+
+// Helper to upload a buffer to cloudinary
+const uploadBufferToCloudinary = async (buffer, filename, folder = 'portfolio') => {
+  // cloudinary.uploader.upload_stream expects a stream; we can use upload_stream with a Promise
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder, public_id: path.parse(filename).name, resource_type: 'image' },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+    stream.end(buffer);
+  });
+};
 
 // @desc    Create portfolio item
 // @route   POST /api/portfolio
@@ -29,15 +45,20 @@ const createPortfolioItem = async (req, res, next) => {
       certifications: certifications ? JSON.parse(certifications) : []
     };
 
-    // Handle file uploads
-    if (req.files?.images?.length > 0) {
-      portfolioData.images = req.files.images.map(file => `/uploads/${file.filename}`);
+    // Handle file uploads: upload to Cloudinary when files are present (memoryStorage provides buffer)
+    if (req.files?.images && req.files.images.length > 0) {
+      const uploaded = [];
+      for (const file of req.files.images) {
+        const result = await uploadBufferToCloudinary(file.buffer, file.originalname, 'portfolio');
+        // store secure_url and public_id for possible deletion later
+        uploaded.push({ url: result.secure_url, public_id: result.public_id });
+      }
+      portfolioData.images = uploaded; // store objects {url, public_id}
     } else {
-      // This will cause the Mongoose 'required' validation for 'images' to fail, which is correct.
-      // The model requires at least one image.
+      // This will cause the Mongoose 'required' validation for 'images' to fail if model expects at least one image.
     }
 
-    const portfolioItem = await PortfolioItem.create(portfolioData);
+  const portfolioItem = await PortfolioItem.create(portfolioData);
 
     res.status(201).json({
       success: true,
@@ -170,32 +191,52 @@ const updatePortfolioItem = async (req, res, next) => {
       certifications: certifications ? JSON.parse(certifications) : portfolioItem.certifications
     };
 
-    // Handle file uploads
+    // Handle file uploads (upload new to Cloudinary and remove old ones if present)
     if (req.files) {
       // Handle images
       if (req.files.images) {
-        // Delete old images
-        portfolioItem.images.forEach(image => {
-          const imagePath = path.join(__dirname, '..', image);
-          if (fs.existsSync(imagePath)) {
-            fs.unlinkSync(imagePath);
-          }
-        });
-        
-        updateData.images = req.files.images.map(file => `/uploads/${file.filename}`);
-      }
-
-      // Handle resume
-      if (req.files.resume) {
-        // Delete old resume
-        if (portfolioItem.resumeUrl) {
-          const resumePath = path.join(__dirname, '..', portfolioItem.resumeUrl);
-          if (fs.existsSync(resumePath)) {
-            fs.unlinkSync(resumePath);
+        // Delete old Cloudinary images if stored with public_id
+        if (portfolioItem.images && portfolioItem.images.length > 0) {
+          for (const img of portfolioItem.images) {
+            if (img.public_id) {
+              try {
+                await cloudinary.uploader.destroy(img.public_id, { resource_type: 'image' });
+              } catch (e) {
+                // ignore deletion errors
+              }
+            }
           }
         }
-        
-        updateData.resumeUrl = `/uploads/${req.files.resume[0].filename}`;
+
+        const uploaded = [];
+        for (const file of req.files.images) {
+          const result = await uploadBufferToCloudinary(file.buffer, file.originalname, 'portfolio');
+          uploaded.push({ url: result.secure_url, public_id: result.public_id });
+        }
+        updateData.images = uploaded;
+      }
+
+      // Handle resume (store as resource_type raw or auto)
+      if (req.files.resume) {
+        // Delete old resume if it was uploaded to Cloudinary
+        if (portfolioItem.resumeUrl && portfolioItem.resumePublicId) {
+          try {
+            await cloudinary.uploader.destroy(portfolioItem.resumePublicId, { resource_type: 'raw' });
+          } catch (e) {}
+        }
+
+        // Upload new resume
+        const resumeFile = req.files.resume[0];
+        const resumeResult = await new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream({ resource_type: 'raw', folder: 'portfolio/resumes', public_id: path.parse(resumeFile.originalname).name }, (err, res) => {
+            if (err) return reject(err);
+            resolve(res);
+          });
+          stream.end(resumeFile.buffer);
+        });
+
+        updateData.resumeUrl = resumeResult.secure_url;
+        updateData.resumePublicId = resumeResult.public_id;
       }
     }
 
@@ -237,19 +278,23 @@ const deletePortfolioItem = async (req, res, next) => {
       });
     }
 
-    // Delete files from filesystem
-    portfolioItem.images.forEach(image => {
-      const imagePath = path.join(__dirname, '..', image);
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
+    // Delete images from Cloudinary if stored with public_id
+    if (portfolioItem.images && portfolioItem.images.length > 0) {
+      for (const img of portfolioItem.images) {
+        if (img.public_id) {
+          try {
+            await cloudinary.uploader.destroy(img.public_id, { resource_type: 'image' });
+          } catch (e) {
+            // ignore
+          }
+        }
       }
-    });
+    }
 
-    if (portfolioItem.resumeUrl) {
-      const resumePath = path.join(__dirname, '..', portfolioItem.resumeUrl);
-      if (fs.existsSync(resumePath)) {
-        fs.unlinkSync(resumePath);
-      }
+    if (portfolioItem.resumePublicId) {
+      try {
+        await cloudinary.uploader.destroy(portfolioItem.resumePublicId, { resource_type: 'raw' });
+      } catch (e) {}
     }
 
     // Soft delete

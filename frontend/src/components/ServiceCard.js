@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { SERVICE_CATEGORIES } from '../utils/constants';
+import { resolveImageUrl } from '../utils/media';
 
 const ServiceCard = ({ service }) => {
   const category = SERVICE_CATEGORIES.find(cat => cat.value === service.category);
@@ -11,7 +12,7 @@ const ServiceCard = ({ service }) => {
       <div className="h-48 bg-secondary relative">
         {service.images && service.images.length > 0 ? (
           <img
-            src={service.images[0]}
+            src={resolveImageUrl(service.images[0])}
             alt={service.title}
             className="w-full h-full object-cover"
           />
@@ -59,7 +60,7 @@ const ServiceCard = ({ service }) => {
           <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center mr-3">
             {service.provider?.avatar ? (
               <img
-                src={service.provider.avatar}
+                src={resolveImageUrl(service.provider.avatar)}
                 alt={service.provider.name}
                 className="h-8 w-8 rounded-full object-cover"
               />

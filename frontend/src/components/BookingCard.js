@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_COLORS } from '../utils/constants';
-import { API_ROOT } from '../utils/constants';
+import { resolveImageUrl } from '../utils/media';
 
 const BookingCard = ({ booking, onStatusUpdate, showActions = true, userRole }) => {
   const formatDate = (dateString) => {
@@ -83,8 +83,8 @@ const BookingCard = ({ booking, onStatusUpdate, showActions = true, userRole }) 
               <h4 className="font-semibold text-card-foreground">Uploaded Images</h4>
               <div className="flex flex-wrap gap-2 mt-2">
                 {booking.customerImages.map((img, index) => (
-                  <a key={index} href={`${API_ROOT}${img}`} target="_blank" rel="noopener noreferrer">
-                    <img src={`${API_ROOT}${img}`} alt={`booking-img-${index}`} className="w-24 h-24 object-cover rounded-md border" />
+                  <a key={index} href={resolveImageUrl(img)} target="_blank" rel="noopener noreferrer">
+                    <img src={resolveImageUrl(img)} alt={`booking-img-${index}`} className="w-24 h-24 object-cover rounded-md border" />
                   </a>
                 ))}
               </div>
@@ -142,9 +142,9 @@ const BookingCard = ({ booking, onStatusUpdate, showActions = true, userRole }) 
             <div className="flex items-center mb-2">
               <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center mr-3">
                 {isCustomer && booking.provider?.avatar ? (
-                  <img src={`http://localhost:5000${booking.provider.avatar}`} alt={booking.provider.name} className="h-10 w-10 rounded-full object-cover" />
+                    <img src={resolveImageUrl(booking.provider.avatar)} alt={booking.provider.name} className="h-10 w-10 rounded-full object-cover" />
                 ) : isProvider && booking.customer?.avatar ? (
-                  <img src={`http://localhost:5000${booking.customer.avatar}`} alt={booking.customer.name} className="h-10 w-10 rounded-full object-cover" />
+                    <img src={resolveImageUrl(booking.customer.avatar)} alt={booking.customer.name} className="h-10 w-10 rounded-full object-cover" />
                 ) : (
                   <span className="text-primary font-medium text-lg">
                     {isCustomer ? booking.provider?.name?.charAt(0).toUpperCase() : booking.customer?.name?.charAt(0).toUpperCase()}

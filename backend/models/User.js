@@ -40,8 +40,9 @@ const userSchema = new mongoose.Schema({
     type: String,
   },
   address: addressSchema,
+  // avatar may be a legacy string path or an object { url, public_id } when stored in Cloudinary
   avatar: {
-    type: String,
+    type: mongoose.Schema.Types.Mixed,
     default: '/uploads/default-avatar.png',
   },
   isActive: {

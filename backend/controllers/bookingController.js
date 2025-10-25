@@ -2,6 +2,18 @@ const Booking = require('../models/Booking');
 const Service = require('../models/Service');
 const User = require('../models/User');
 const { BOOKING_STATUS } = require('../utils/serviceConstants.js');
+const cloudinary = require('../config/cloudinary');
+const streamifier = require('streamifier');
+
+const uploadBufferToCloudinary = (buffer, filename, folder = 'bookings') => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream({ folder, public_id: filename.split('.')[0] }, (err, result) => {
+      if (err) return reject(err);
+      resolve(result);
+    });
+    streamifier.createReadStream(buffer).pipe(stream);
+  });
+};
 
 // @desc    Create new booking
 // @route   POST /api/bookings
@@ -52,10 +64,15 @@ const createBooking = async (req, res, next) => {
       });
     }
 
-    // Handle optional image uploads
+    // Handle optional image uploads (upload to Cloudinary)
     let customerImages = [];
     if (req.files && Array.isArray(req.files) && req.files.length > 0) {
-      customerImages = req.files.map(file => `/uploads/${file.filename}`);
+      const uploaded = [];
+      for (const file of req.files) {
+        const res = await uploadBufferToCloudinary(file.buffer, file.originalname, `bookings/${req.user.id}`);
+        uploaded.push({ url: res.secure_url, public_id: res.public_id });
+      }
+      customerImages = uploaded;
     }
 
     // Create booking
@@ -69,7 +86,7 @@ const createBooking = async (req, res, next) => {
       customerAddress,
       contactPhone,
       paymentMethod,
-      customerImages
+  customerImages
     });
 
     // Populate booking details

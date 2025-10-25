@@ -17,8 +17,8 @@ const PortfolioItemSchema = new mongoose.Schema({
     required: [true, 'Please add a description'],
   },
   images: [{
-    type: String,
-    required: [true, 'Please upload at least one image'],
+    url: { type: String, required: [true, 'Please upload at least one image'] },
+    public_id: { type: String }
   }],
   category: {
     type: String,
@@ -38,6 +38,9 @@ const PortfolioItemSchema = new mongoose.Schema({
     dateObtained: Date,
   }],
   resumeUrl: {
+    type: String,
+  },
+  resumePublicId: {
     type: String,
   },
   featured: {

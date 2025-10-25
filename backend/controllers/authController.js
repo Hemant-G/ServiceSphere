@@ -1,5 +1,17 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const cloudinary = require('../config/cloudinary');
+const streamifier = require('streamifier');
+
+const uploadBufferToCloudinary = (buffer, filename, folder = 'avatars') => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream({ folder, public_id: filename.split('.')[0] }, (err, result) => {
+      if (err) return reject(err);
+      resolve(result);
+    });
+    streamifier.createReadStream(buffer).pipe(stream);
+  });
+};
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -162,9 +174,13 @@ const updateProfile = async (req, res, next) => {
     }
 
     // Check if a file was uploaded
-    if (req.file) {
-      // The path should be accessible by the frontend, e.g., /uploads/filename.jpg
-      updateData.avatar = `/uploads/${req.file.filename}`;
+    if (req.file && req.file.buffer) {
+      try {
+        const result = await uploadBufferToCloudinary(req.file.buffer, req.file.originalname, `avatars/${req.user.id}`);
+        updateData.avatar = { url: result.secure_url, public_id: result.public_id };
+      } catch (e) {
+        return res.status(500).json({ success: false, message: 'Failed to upload avatar' });
+      }
     }
 
     const user = await User.findByIdAndUpdate(
@@ -236,11 +252,18 @@ const updateAvatar = async (req, res, next) => {
       });
     }
 
-    const avatarPath = `/uploads/${req.file.filename}`;
+    // Upload avatar to Cloudinary
+    let avatarObj = null;
+    try {
+      const result = await uploadBufferToCloudinary(req.file.buffer, req.file.originalname, `avatars/${req.user.id}`);
+      avatarObj = { url: result.secure_url, public_id: result.public_id };
+    } catch (e) {
+      return res.status(500).json({ success: false, message: 'Failed to upload avatar' });
+    }
 
     const user = await User.findByIdAndUpdate(
       req.user.id,
-      { $set: { avatar: avatarPath } },
+      { $set: { avatar: avatarObj } },
       { new: true, runValidators: true }
     );
 
