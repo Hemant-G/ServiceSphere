@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useService } from '../context/ServiceContext';
+import { API_ROOT } from '../utils/constants';
 import { useAuth } from '../context/AuthContext';
 import { authAPI } from '../utils/api';
 
@@ -92,7 +93,7 @@ const ServiceDetails = () => {
                   {providerProfile.portfolio.map(item => (
                     <Link to={`/portfolio/${item._id}`} key={item._id} className="group">
                       <div className="rounded-lg overflow-hidden border group-hover:shadow-lg transition-shadow">
-                        <img src={`http://localhost:5000${item.images[0]}`} alt={item.title} className="h-32 w-full object-cover" />
+                        <img src={`${API_ROOT}${item.images[0]}`} alt={item.title} className="h-32 w-full object-cover" />
                         <div className="p-2">
                           <h4 className="text-sm font-semibold truncate group-hover:text-primary">{item.title}</h4>
                         </div>
@@ -110,7 +111,7 @@ const ServiceDetails = () => {
               {providerProfile ? (
                 <div className="text-center">
                   <img
-                    src={providerProfile.avatar ? `http://localhost:5000${providerProfile.avatar}` : `https://ui-avatars.com/api/?name=${providerProfile.name}&background=random`}
+                    src={providerProfile.avatar ? `${API_ROOT}${providerProfile.avatar}` : `https://ui-avatars.com/api/?name=${providerProfile.name}&background=random`}
                     alt={providerProfile.name}
                     className="w-24 h-24 rounded-full mx-auto mb-4 object-cover border-4 border-card shadow-lg"
                   />

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { usePortfolio } from '../context/PortfolioContext';
+import { API_ROOT } from '../utils/constants';
 
 const PortfolioItemDetails = () => {
   const { id } = useParams();
@@ -17,7 +18,7 @@ const PortfolioItemDetails = () => {
       if (result.success) {
         setItem(result.data);
         if (result.data.images && result.data.images.length > 0) {
-          setSelectedImage(`http://localhost:5000${result.data.images[0]}`);
+          setSelectedImage(`${API_ROOT}${result.data.images[0]}`);
         }
       } else {
         setError(result.error);
@@ -56,11 +57,11 @@ const PortfolioItemDetails = () => {
               {item.images.map((img, index) => (
                 <img
                   key={index}
-                  src={`http://localhost:5000${img}`}
+                  src={`${API_ROOT}${img}`}
                   alt={`${item.title} - ${index + 1}`}
-                  onClick={() => setSelectedImage(`http://localhost:5000${img}`)}
+                  onClick={() => setSelectedImage(`${API_ROOT}${img}`)}
                   className={`w-24 h-24 object-cover rounded-md cursor-pointer border-2 transition-all ${
-                    selectedImage === `http://localhost:5000${img}` ? 'border-primary' : 'border-border'
+                    selectedImage === `${API_ROOT}${img}` ? 'border-primary' : 'border-border'
                   }`}
                 />
               ))}
@@ -91,7 +92,7 @@ const PortfolioItemDetails = () => {
             {item.provider && (
               <div className="mt-8 border-t border-border pt-6 flex items-center">
                 <img
-                  src={item.provider.avatar ? `http://localhost:5000${item.provider.avatar}` : `https://ui-avatars.com/api/?name=${item.provider.name}&background=random`}
+                  src={item.provider.avatar ? `${API_ROOT}${item.provider.avatar}` : `https://ui-avatars.com/api/?name=${item.provider.name}&background=random`}
                   alt={item.provider.name}
                   className="w-16 h-16 rounded-full object-cover mr-4"
                 />

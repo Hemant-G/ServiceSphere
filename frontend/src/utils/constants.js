@@ -227,3 +227,16 @@ export const APP_CONFIG = {
   SUPPORT_EMAIL: 'support@servicesphere.com',
   SUPPORT_PHONE: '+1 (555) 123-4567',
 };
+
+// API root for constructing media URLs. Uses REACT_APP_API_URL env if provided,
+// which typically has the form 'https://api.example.com/api'. We strip any trailing
+// '/api' so consumers can append '/uploads/...' paths consistently.
+export const API_ROOT = (() => {
+  const raw = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+  try {
+    // Remove trailing '/api' if present
+    return raw.replace(/\/api\/?$/, '');
+  } catch (e) {
+    return raw;
+  }
+})();

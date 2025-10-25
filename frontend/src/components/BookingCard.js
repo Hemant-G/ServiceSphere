@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BOOKING_STATUS_LABELS, BOOKING_STATUS_COLORS } from '../utils/constants';
+import { API_ROOT } from '../utils/constants';
 
 const BookingCard = ({ booking, onStatusUpdate, showActions = true, userRole }) => {
   const formatDate = (dateString) => {
@@ -82,8 +83,8 @@ const BookingCard = ({ booking, onStatusUpdate, showActions = true, userRole }) 
               <h4 className="font-semibold text-card-foreground">Uploaded Images</h4>
               <div className="flex flex-wrap gap-2 mt-2">
                 {booking.customerImages.map((img, index) => (
-                  <a key={index} href={`http://localhost:5000${img}`} target="_blank" rel="noopener noreferrer">
-                    <img src={`http://localhost:5000${img}`} alt={`booking-img-${index}`} className="w-24 h-24 object-cover rounded-md border" />
+                  <a key={index} href={`${API_ROOT}${img}`} target="_blank" rel="noopener noreferrer">
+                    <img src={`${API_ROOT}${img}`} alt={`booking-img-${index}`} className="w-24 h-24 object-cover rounded-md border" />
                   </a>
                 ))}
               </div>

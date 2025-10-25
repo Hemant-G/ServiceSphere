@@ -1,4 +1,5 @@
 import React from 'react';
+import { API_ROOT } from '../utils/constants';
 import { Link } from 'react-router-dom';
 import { FiFileText } from 'react-icons/fi';
 
@@ -10,7 +11,7 @@ const PortfolioCard = ({ portfolioItem }) => {
         {portfolioItem.images && portfolioItem.images.length > 0 ? (
           <div className="relative h-full">
             <img
-              src={`http://localhost:5000${portfolioItem.images[0]}`}
+              src={`${API_ROOT}${portfolioItem.images[0]}`}
               alt={portfolioItem.title}
               className="w-full h-full object-cover"
             />

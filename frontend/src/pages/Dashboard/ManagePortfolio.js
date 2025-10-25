@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { usePortfolio } from '../../context/PortfolioContext';
 import { servicesAPI } from '../../utils/api';
 import { FiImage } from 'react-icons/fi';
+import { API_ROOT } from '../../utils/constants';
 
 const PortfolioFormModal = ({ onClose, onPortfolioItemCreated }) => {
   const { register, handleSubmit, formState: { errors }, reset } = useForm();
@@ -144,7 +145,7 @@ const ManagePortfolio = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {portfolioItems.map(item => (
               <div key={item._id} className="bg-card rounded-lg border border-border overflow-hidden group relative">
-                <img src={`http://localhost:5000${item.images[0]}`} alt={item.title} className="h-56 w-full object-cover" />
+                <img src={`${API_ROOT}${item.images[0]}`} alt={item.title} className="h-56 w-full object-cover" />
                 <div className="p-4">
                   <h3 className="text-lg font-semibold text-card-foreground">{item.title}</h3>
                   <p className="text-sm text-muted-foreground">{item.category}</p>
