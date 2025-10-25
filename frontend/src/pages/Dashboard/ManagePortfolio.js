@@ -43,22 +43,63 @@ const PortfolioFormModal = ({ onClose, onPortfolioItemCreated }) => {
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
-    const formData = new FormData();
-    formData.append('title', data.title);
-    formData.append('description', data.description);
-    formData.append('category', data.category);
-    
-    if (data.images && data.images.length > 0) {
-      Array.from(data.images).forEach(image => formData.append('images', image));
+
+    try {
+      // If there are images, upload them directly to Cloudinary using signed upload
+      let imagesMeta = [];
+
+      if (data.images && data.images.length > 0) {
+        // Request signature from backend
+        const sigRes = await fetch('/api/portfolio/sign-upload', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+        const sigJson = await sigRes.json();
+        if (!sigJson.success) throw new Error('Failed to get upload signature');
+        const { timestamp, signature, api_key, cloud_name } = sigJson.data;
+
+        const uploadPromises = Array.from(data.images).map(async (file) => {
+          const form = new FormData();
+          form.append('file', file);
+          form.append('api_key', api_key);
+          form.append('timestamp', timestamp);
+          form.append('signature', signature);
+          // Optionally set folder
+          form.append('folder', `portfolio/${Date.now()}`);
+
+          const res = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/auto/upload`, {
+            method: 'POST',
+            body: form,
+          });
+          const json = await res.json();
+          if (json.error) throw new Error(json.error.message || 'Cloudinary upload failed');
+          return { url: json.secure_url, public_id: json.public_id };
+        });
+
+        imagesMeta = await Promise.all(uploadPromises);
+      }
+
+      // Now send portfolio metadata (including imagesMeta) to backend
+      const payload = {
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        skills: data.skills || '',
+        experience: data.experience || 0,
+        certifications: data.certifications || '[]',
+        featured: data.featured || false,
+        images: imagesMeta
+      };
+
+      const result = await createPortfolioItem(payload);
+      if (result.success) {
+        onPortfolioItemCreated();
+        reset();
+      } else {
+        alert(result.error || 'Failed to create portfolio item.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Failed to create portfolio item.');
     }
 
-    const result = await createPortfolioItem(formData);
-    if (result.success) {
-      onPortfolioItemCreated();
-      reset();
-    } else {
-      alert(result.error || 'Failed to create portfolio item.');
-    }
     setIsSubmitting(false);
   };
 

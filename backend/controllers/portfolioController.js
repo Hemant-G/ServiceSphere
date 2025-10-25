@@ -45,17 +45,37 @@ const createPortfolioItem = async (req, res, next) => {
       certifications: certifications ? JSON.parse(certifications) : []
     };
 
-    // Handle file uploads: upload to Cloudinary when files are present (memoryStorage provides buffer)
-    if (req.files?.images && req.files.images.length > 0) {
+  // Handle file uploads: upload to Cloudinary when files are present (memoryStorage provides buffer)
+  if (req.files?.images && req.files.images.length > 0) {
       const uploaded = [];
-      for (const file of req.files.images) {
-        const result = await uploadBufferToCloudinary(file.buffer, file.originalname, 'portfolio');
-        // store secure_url and public_id for possible deletion later
-        uploaded.push({ url: result.secure_url, public_id: result.public_id });
+      try {
+        for (const file of req.files.images) {
+          // Basic validation: ensure buffer exists
+          if (!file.buffer) {
+            return res.status(400).json({ success: false, message: 'Invalid file upload' });
+          }
+          // Limit to 5 images enforced by multer; ensure we don't exceed 5
+          if (req.files.images.length > 5) {
+            return res.status(400).json({ success: false, message: 'Maximum 5 images allowed' });
+          }
+
+          const result = await uploadBufferToCloudinary(file.buffer, file.originalname, 'portfolio');
+          // store secure_url and public_id for possible deletion later
+          uploaded.push({ url: result.secure_url, public_id: result.public_id });
+        }
+      } catch (uploadErr) {
+        console.error('Cloudinary upload failed:', uploadErr);
+        return res.status(500).json({ success: false, message: 'Failed to upload images. Please try again.' });
       }
       portfolioData.images = uploaded; // store objects {url, public_id}
     } else {
       // This will cause the Mongoose 'required' validation for 'images' to fail if model expects at least one image.
+    }
+
+    // Support client-side direct Cloudinary uploads: accept images metadata array in JSON body
+    if ((!portfolioData.images || portfolioData.images.length === 0) && req.body.images && Array.isArray(req.body.images)) {
+      // Expect each item to be { url, public_id }
+      portfolioData.images = req.body.images.map(img => ({ url: img.url, public_id: img.public_id }));
     }
 
   const portfolioItem = await PortfolioItem.create(portfolioData);

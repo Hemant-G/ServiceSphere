@@ -85,9 +85,13 @@ export const bookingsAPI = {
 
 // Portfolio API calls
 export const portfolioAPI = {
-  create: (formData) => api.post('/portfolio', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
+  create: (payload) => {
+    if (payload instanceof FormData) {
+      return api.post('/portfolio', payload, { headers: { 'Content-Type': 'multipart/form-data' } });
+    }
+    // JSON payload (e.g., images metadata already uploaded to Cloudinary)
+    return api.post('/portfolio', payload);
+  },
   getByProvider: (providerId, params) => api.get(`/portfolio/provider/${providerId}`, { params }),
   getMyPortfolio: () => api.get('/portfolio/my-portfolio'),
   getById: (id) => api.get(`/portfolio/${id}`),
