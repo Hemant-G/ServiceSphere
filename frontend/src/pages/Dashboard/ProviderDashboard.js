@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useService } from '../../context/ServiceContext';
+import { Link } from 'react-router-dom';
 import { useBooking } from '../../context/BookingContext';
 import { useAuth } from '../../context/AuthContext';
 import { BOOKING_STATUS } from '../../utils/constants';
@@ -233,12 +234,12 @@ const ProviderDashboard = () => {
             >
               Add New Service
             </button>
-            <a
-              href="/portfolio/my-portfolio" 
+            <Link
+              to="/my-portfolio" 
               className="border border-primary text-primary px-4 py-2 rounded-lg font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
             >
               Manage Portfolio
-            </a>
+            </Link>
             <a
               href="/profile"
               className="border border-border text-foreground px-4 py-2 rounded-lg font-medium hover:bg-secondary transition-colors"
