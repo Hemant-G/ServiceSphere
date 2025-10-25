@@ -10,16 +10,30 @@ const PortfolioFormModal = ({ onClose, onPortfolioItemCreated }) => {
   const { createPortfolioItem } = usePortfolio();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [predefinedServices, setPredefinedServices] = useState([]);
+  const FALLBACK_SERVICES = [
+    'cleaning',
+    'plumbing',
+    'Electrician',
+    'gardening',
+    'Painting',
+    'Carpentry',
+    'Pest Control',
+    'Appliance Repair'
+  ];
 
   useEffect(() => {
     const fetchPredefinedServices = async () => {
       try {
-        const { data } = await servicesAPI.getPredefined();
-        if (data && data.data) {
-          setPredefinedServices(data.data);
+        const res = await servicesAPI.getPredefined();
+        const list = res?.data?.data;
+        if (Array.isArray(list) && list.length > 0) {
+          setPredefinedServices(list);
+        } else {
+          setPredefinedServices(FALLBACK_SERVICES);
         }
       } catch (error) {
         console.error("Failed to fetch predefined services:", error);
+        setPredefinedServices(FALLBACK_SERVICES);
       }
     };
     fetchPredefinedServices();
