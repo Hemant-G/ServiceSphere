@@ -19,7 +19,7 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
 import PortfolioItemDetails from './pages/PortfolioItemDetails';
-import MyPortfolio from './pages/Dashboard/MyPortfolio';
+import ManagePortfolio from './pages/Dashboard/ManagePortfolio';
 import NotFound from './pages/NotFound';
 import NewBooking from './pages/NewBooking';
 
@@ -58,7 +58,7 @@ function App() {
                         path="/portfolio/my-portfolio"
                         element={
                           <ProtectedRoute roles={['provider']}>
-                            <MyPortfolio />
+                            <ManagePortfolio />
                           </ProtectedRoute>
                         }
                       />

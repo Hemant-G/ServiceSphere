@@ -235,7 +235,7 @@ const ProviderDashboard = () => {
               Add New Service
             </button>
             <Link
-              to="/my-portfolio" 
+              to="/portfolio/my-portfolio" 
               className="border border-primary text-primary px-4 py-2 rounded-lg font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
             >
               Manage Portfolio

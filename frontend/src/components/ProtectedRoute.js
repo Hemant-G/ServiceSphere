@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const ProtectedRoute = ({ children, requiredRole = null }) => {
+const ProtectedRoute = ({ children, roles = null }) => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
 
@@ -20,11 +20,10 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Check role-based access
-  if (requiredRole && user?.role !== requiredRole) {
-    // Redirect to appropriate dashboard based on user role
-    const dashboardPath = user?.role === 'customer' ? '/dashboard/customer' : '/dashboard/provider';
-    return <Navigate to={dashboardPath} replace />;
+  // Check role-based access (roles can be an array of allowed roles)
+  if (roles && Array.isArray(roles) && !roles.includes(user?.role)) {
+    // Redirect to main dashboard since role-specific dashboard routes don't exist
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;
