@@ -49,27 +49,45 @@ const PortfolioFormModal = ({ onClose, onPortfolioItemCreated }) => {
       let imagesMeta = [];
 
       if (data.images && data.images.length > 0) {
-        // Request signature from backend
-        const sigRes = await fetch('/api/portfolio/sign-upload', { method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
-        const sigJson = await sigRes.json();
-        if (!sigJson.success) throw new Error('Failed to get upload signature');
-        const { timestamp, signature, api_key, cloud_name } = sigJson.data;
-
         const uploadPromises = Array.from(data.images).map(async (file) => {
+          const timestamp = Math.round(new Date().getTime() / 1000);
+          const folder = `portfolio/${Date.now()}`;
+          const paramsToSign = {
+            timestamp,
+            folder,
+          };
+
+          // Get signature from backend
+          const sigRes = await fetch('/api/portfolio/sign-upload', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+            body: JSON.stringify({ paramsToSign }),
+          });
+          const sigJson = await sigRes.json();
+          if (!sigJson.success) {
+            throw new Error('Failed to get upload signature from backend.');
+          }
+          const { signature, api_key, cloud_name } = sigJson;
+
+          // Upload to Cloudinary
           const form = new FormData();
           form.append('file', file);
           form.append('api_key', api_key);
           form.append('timestamp', timestamp);
+          form.append('folder', folder);
           form.append('signature', signature);
-          // Optionally set folder
-          form.append('folder', `portfolio/${Date.now()}`);
 
           const res = await fetch(`https://api.cloudinary.com/v1_1/${cloud_name}/auto/upload`, {
             method: 'POST',
             body: form,
           });
           const json = await res.json();
-          if (json.error) throw new Error(json.error.message || 'Cloudinary upload failed');
+          if (json.error) {
+            throw new Error(json.error.message || 'Cloudinary upload failed');
+          }
           return { url: json.secure_url, public_id: json.public_id };
         });
 

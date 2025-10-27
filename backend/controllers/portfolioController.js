@@ -353,6 +353,19 @@ const getPortfolioCategories = async (req, res, next) => {
   }
 };
 
+const signUpload = (req, res, next) => {
+  const { paramsToSign } = req.body;
+  try {
+    const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET);
+    res.status(200).json({
+      success: true,
+      signature,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createPortfolioItem,
   getProviderPortfolio,
@@ -360,5 +373,6 @@ module.exports = {
   getPortfolioItemById,
   updatePortfolioItem,
   deletePortfolioItem,
-  getPortfolioCategories
+  getPortfolioCategories,
+  signUpload
 };
