@@ -360,6 +360,8 @@ const signUpload = (req, res, next) => {
     res.status(200).json({
       success: true,
       signature,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME
     });
   } catch (error) {
     next(error);
