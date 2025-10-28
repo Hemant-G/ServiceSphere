@@ -160,12 +160,15 @@ const updateProfile = async (req, res, next) => {
     const { name, phone, address } = req.body;
     const updateData = {};
 
-    if (name) updateData.name = name;
-    if (phone) updateData.phone = phone;
+    if (name) updateData.name = name; // This will be a string from form-data
+    if (phone) updateData.phone = phone; // This will be a string from form-data
+
+    // When using multipart/form-data, nested objects are sent as strings.
+    // We need to parse the address string back into an object.
     if (address) {
       const parsedAddress = typeof address === 'string' ? JSON.parse(address) : address;
-      // Use dot notation to update nested address fields without overwriting the whole object
-      // This prevents fields from being wiped if only partial address is sent
+      // Use dot notation to update nested address fields without overwriting the whole object.
+      // This prevents fields from being wiped if only a partial address is sent.
       Object.keys(parsedAddress).forEach(key => {
         if (parsedAddress[key]) {
           updateData[`address.${key}`] = parsedAddress[key];
