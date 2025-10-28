@@ -105,6 +105,16 @@ export const PortfolioProvider = ({ children }) => {
     }
   };
 
+  const updatePortfolioItem = async (id, formData) => {
+    try {
+      const response = await portfolioAPI.update(id, formData);
+      dispatch({ type: PORTFOLIO_ACTIONS.UPDATE_PORTFOLIO_ITEM, payload: response.data.data });
+      return { success: true, data: response.data.data };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.message || 'Failed to update item' };
+    }
+  };
+
   const value = {
     ...state,
     fetchPortfolioItems,
@@ -112,7 +122,7 @@ export const PortfolioProvider = ({ children }) => {
     getPortfolioItemById,
     createPortfolioItem,
     deletePortfolioItem,
-    // updatePortfolioItem will be added here when implemented
+    updatePortfolioItem,
   };
 
   return (

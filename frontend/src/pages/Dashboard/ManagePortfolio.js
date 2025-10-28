@@ -163,16 +163,107 @@ const PortfolioFormModal = ({ onClose, onPortfolioItemCreated }) => {
   );
 };
 
+import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { Link } from 'react-router-dom';
+import { usePortfolio } from '../../context/PortfolioContext';
+import { servicesAPI } from '../../utils/api';
+import { FiImage } from 'react-icons/fi';
+import { resolveImageUrl } from '../../utils/media';
+
+const PortfolioFormModal = ({ onClose, onPortfolioItemCreated }) => {
+  // ... (existing PortfolioFormModal code, no changes needed here)
+};
+
+const EditPortfolioModal = ({ item, onClose, onPortfolioItemUpdated }) => {
+  const { register, handleSubmit, formState: { errors }, reset } = useForm({
+    defaultValues: {
+      title: item.title,
+      description: item.description,
+      category: item.category,
+      skills: item.skills.join(', '),
+      experience: item.experience,
+      featured: item.featured,
+    },
+  });
+  const { updatePortfolioItem } = usePortfolio();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const onSubmit = async (data) => {
+    setIsSubmitting(true);
+    const formData = new FormData();
+    formData.append('title', data.title);
+    formData.append('description', data.description);
+    formData.append('category', data.category);
+    formData.append('skills', data.skills);
+    formData.append('experience', data.experience);
+    formData.append('featured', data.featured);
+    if (data.images && data.images.length > 0) {
+      for (let i = 0; i < data.images.length; i++) {
+        formData.append('images', data.images[i]);
+      }
+    }
+
+    const result = await updatePortfolioItem(item._id, formData);
+    if (result.success) {
+      onPortfolioItemUpdated();
+    } else {
+      alert(result.error || 'Failed to update portfolio item.');
+    }
+    setIsSubmitting(false);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+      <div className="bg-card p-8 rounded-lg shadow-xl w-full max-w-md border border-border">
+        <h2 className="text-2xl font-bold mb-6 text-card-foreground">Edit Portfolio Item</h2>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <input {...register('title', { required: 'Title is required' })} placeholder="Title" className="w-full p-2 border border-input bg-input rounded" />
+          <textarea {...register('description', { required: 'Description is required' })} placeholder="Description" className="w-full p-2 border border-input bg-input rounded" />
+          <input {...register('skills')} placeholder="Skills (comma-separated)" className="w-full p-2 border border-input bg-input rounded" />
+          <input type="number" {...register('experience')} placeholder="Experience (years)" className="w-full p-2 border border-input bg-input rounded" />
+          <div>
+            <label className="flex items-center">
+              <input type="checkbox" {...register('featured')} className="mr-2" />
+              <span>Featured</span>
+            </label>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-card-foreground mb-1">Images (up to 5)</label>
+            <input type="file" {...register('images')} className="w-full p-2 border border-input bg-input rounded" accept="image/*" multiple />
+          </div>
+          <div className="flex justify-end space-x-4">
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded text-secondary-foreground border border-border hover:bg-secondary">
+              Cancel
+            </button>
+            <button type="submit" disabled={isSubmitting} className="px-4 py-2 rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+              {isSubmitting ? 'Updating...' : 'Update Item'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const ManagePortfolio = () => {
   const { portfolioItems, isLoading, getMyPortfolio, deletePortfolioItem } = usePortfolio();
   const [showForm, setShowForm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
 
   useEffect(() => {
     getMyPortfolio();
-  }, [getMyPortfolio]); // This is already correct, but confirms the pattern.
+  }, [getMyPortfolio]);
 
   const handleItemCreated = () => {
     setShowForm(false);
+    getMyPortfolio();
+  };
+
+  const handleItemUpdated = () => {
+    setShowEditModal(false);
+    setEditingItem(null);
     getMyPortfolio();
   };
 
@@ -180,6 +271,11 @@ const ManagePortfolio = () => {
     if (window.confirm('Are you sure you want to delete this item?')) {
       await deletePortfolioItem(id);
     }
+  };
+
+  const handleEdit = (item) => {
+    setEditingItem(item);
+    setShowEditModal(true);
   };
 
   return (
@@ -202,6 +298,14 @@ const ManagePortfolio = () => {
           />
         )}
 
+        {showEditModal && editingItem && (
+          <EditPortfolioModal
+            item={editingItem}
+            onClose={() => setShowEditModal(false)}
+            onPortfolioItemUpdated={handleItemUpdated}
+          />
+        )}
+
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(3)].map((_, index) => (
@@ -218,15 +322,17 @@ const ManagePortfolio = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {portfolioItems.map(item => (
               <div key={item._id} className="bg-card rounded-lg border border-border overflow-hidden group relative">
-                <img src={resolveImageUrl(item.images && item.images[0])} alt={item.title} className="h-56 w-full object-cover" />
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold text-card-foreground">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">{item.category}</p>
-                  <p className="text-foreground mt-2 text-sm">{item.description.substring(0, 100)}...</p>
-                </div>
+                <Link to={`/portfolio/${item._id}`} className="block">
+                  <img src={resolveImageUrl(item.images && item.images[0])} alt={item.title} className="h-56 w-full object-cover" />
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold text-card-foreground">{item.title}</h3>
+                    <p className="text-sm text-muted-foreground">{item.category}</p>
+                    <p className="text-foreground mt-2 text-sm">{item.description.substring(0, 100)}...</p>
+                  </div>
+                </Link>
                 <div className="absolute top-2 right-2 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
-                        onClick={() => {/* Handle Edit: Open modal with item data */}}
+                        onClick={() => handleEdit(item)}
                         className="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors"
                         title="Edit Item"
                     >
