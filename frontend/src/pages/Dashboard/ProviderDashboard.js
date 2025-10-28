@@ -8,13 +8,14 @@ import ServiceCard from '../../components/ServiceCard';
 import { FiCalendar, FiTool } from 'react-icons/fi';
 import BookingCard from '../../components/BookingCard';
 
-const ServiceFormModal = ({ onClose, onServiceCreated }) => {
+const ServiceFormModal = ({ serviceToEdit, onClose, onServiceCreated }) => {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [predefinedServices, setPredefinedServices] = useState([]);
-  const { createService, servicesAPI } = useService();
+  const { createService, updateService, servicesAPI } = useService();
+  const isEditMode = !!serviceToEdit;
 
   useEffect(() => {
     const fetchPredefinedServices = async () => {
@@ -22,9 +23,9 @@ const ServiceFormModal = ({ onClose, onServiceCreated }) => {
         const { data } = await servicesAPI.getPredefined();
         if (data && data.data) {
           setPredefinedServices(data.data);
-          if (data.data.length > 0) {
+          if (!isEditMode && data.data.length > 0) {
             setTitle(data.data[0]);
-            setCategory(data.data[0]); // Assuming category is same as title for predefined services
+            setCategory(data.data[0]);
           }
         }
       } catch (error) {
@@ -32,22 +33,33 @@ const ServiceFormModal = ({ onClose, onServiceCreated }) => {
       }
     };
     if (servicesAPI) fetchPredefinedServices();
-  }, [servicesAPI]);
+
+    if (isEditMode) {
+      setTitle(serviceToEdit.title);
+      setCategory(serviceToEdit.category);
+      setDescription(serviceToEdit.description);
+      setPrice(serviceToEdit.price);
+    }
+  }, [servicesAPI, serviceToEdit, isEditMode]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const result = await createService({ title, description, category, price });
+    const serviceData = { title, description, category, price };
+    const result = isEditMode 
+      ? await updateService(serviceToEdit._id, serviceData)
+      : await createService(serviceData);
+
     if (result.success) {
       onServiceCreated();
     } else {
-      alert(result.error || 'Failed to create service.');
+      alert(result.error || `Failed to ${isEditMode ? 'update' : 'create'} service.`);
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
       <div className="bg-card p-8 rounded-lg shadow-xl w-full max-w-md border border-border">
-        <h2 className="text-2xl font-bold mb-6 text-card-foreground">Add New Service</h2>
+        <h2 className="text-2xl font-bold mb-6 text-card-foreground">{isEditMode ? 'Edit Service' : 'Add New Service'}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <select value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 border border-input bg-input rounded" required>
             <option value="" >Select a Service</option>
@@ -64,7 +76,7 @@ const ServiceFormModal = ({ onClose, onServiceCreated }) => {
               Cancel
             </button>
             <button type="submit" className="px-4 py-2 rounded bg-primary text-primary-foreground hover:bg-primary/90">
-              Create Service
+              {isEditMode ? 'Update Service' : 'Create Service'}
             </button>
           </div>
         </form>
@@ -94,6 +106,7 @@ const ProviderDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState(null);
   const [showServiceForm, setShowServiceForm] = useState(false);
+  const [editingService, setEditingService] = useState(null);
 
   useEffect(() => {
     if (getMyServices) getMyServices({ limit: 20 });
@@ -110,8 +123,14 @@ const ProviderDashboard = () => {
 
   const handleServiceCreated = () => {
     setShowServiceForm(false);
+    setEditingService(null);
     // Refresh services list
     if (getMyServices) getMyServices({ limit: 20 });
+  };
+
+  const handleEditService = (service) => {
+    setEditingService(service);
+    setShowServiceForm(true);
   };
 
   const handleStatusUpdate = async (bookingId, statusData) => {
@@ -229,7 +248,7 @@ const ProviderDashboard = () => {
           <h2 className="text-lg font-semibold text-card-foreground mb-4">Quick Actions</h2>
           <div className="flex flex-wrap gap-4">
             <button
-              onClick={() => setShowServiceForm(true)}
+              onClick={() => { setEditingService(null); setShowServiceForm(true); }}
               className="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors"
             >
               Add New Service
@@ -251,10 +270,11 @@ const ProviderDashboard = () => {
 
         {/* Main Content */}
         <div className="bg-card rounded-lg border border-border">
-          {/* Add Service Modal */}
+          {/* Add/Edit Service Modal */}
           {showServiceForm && (
             <ServiceFormModal
-              onClose={() => setShowServiceForm(false)}
+              serviceToEdit={editingService}
+              onClose={() => { setShowServiceForm(false); setEditingService(null); }}
               onServiceCreated={handleServiceCreated}
             />
           )}
@@ -265,8 +285,7 @@ const ProviderDashboard = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === tab.id
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
                       ? 'border-primary text-primary'
                       : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
                   }`}
@@ -337,7 +356,7 @@ const ProviderDashboard = () => {
                       <FiTool className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
                       <p className="text-muted-foreground mb-4">No services created yet</p>
                       <button
-                        onClick={() => setShowServiceForm(true)}
+                        onClick={() => { setEditingService(null); setShowServiceForm(true); }}
                         className="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors"
                       >
                         Create Your First Service
@@ -354,7 +373,7 @@ const ProviderDashboard = () => {
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-lg font-semibold text-card-foreground">My Services</h3>
                   <button
-                    onClick={() => setShowServiceForm(true)}
+                    onClick={() => { setEditingService(null); setShowServiceForm(true); }}
                     className="bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors"
                   >
                     Add New Service
@@ -376,25 +395,7 @@ const ProviderDashboard = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {services.map((service) => (
                       <div key={service._id} className="relative">
-                        <ServiceCard service={service} />
-                        <div className="absolute top-2 right-2 flex space-x-2">
-                          <button
-                            onClick={() => {/* Edit service */}}
-                            className="bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition-colors"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleDeleteService(service._id)}
-                            className="bg-red-600 text-white p-2 rounded-full hover:bg-red-700 transition-colors"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
+                        <ServiceCard service={service} onEdit={handleEditService} onDelete={handleDeleteService} />
                       </div>
                     ))}
                   </div>
@@ -404,7 +405,7 @@ const ProviderDashboard = () => {
                     <h3 className="text-xl font-medium text-card-foreground mb-2">No services created yet</h3>
                     <p className="text-muted-foreground mb-4">Start by creating your first service offering</p>
                     <button
-                      onClick={() => setShowServiceForm(true)}
+                      onClick={() => { setEditingService(null); setShowServiceForm(true); }}
                       className="bg-primary text-primary-foreground px-6 py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors"
                     >
                       Create Your First Service
