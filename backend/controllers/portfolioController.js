@@ -317,9 +317,7 @@ const deletePortfolioItem = async (req, res, next) => {
       } catch (e) {}
     }
 
-    // Soft delete
-    portfolioItem.isActive = false;
-    await portfolioItem.save();
+    await PortfolioItem.findByIdAndDelete(req.params.id);
 
     res.json({
       success: true,
