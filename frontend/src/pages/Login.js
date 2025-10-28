@@ -247,14 +247,6 @@ const Login = () => {
             </button>
           </div>
 
-          {/* Demo Accounts */}
-          <div className="mt-6 p-4 bg-background rounded-md border border-border">
-            <h3 className="text-sm font-medium text-foreground mb-2">Demo Accounts:</h3>
-            <div className="text-xs text-muted-foreground space-y-1">
-              <p><strong>Customer:</strong> customer@demo.com / password123</p>
-              <p><strong>Provider:</strong> provider@demo.com / password123</p>
-            </div>
-          </div>
         </form>
       </div>
     </div>

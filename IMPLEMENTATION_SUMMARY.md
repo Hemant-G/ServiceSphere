@@ -152,11 +152,6 @@ service-sphere/
 - `GET /api/reviews/provider/:providerId` - Get provider reviews
 - `GET /api/reviews/my-reviews` - Get my reviews (Customer only)
 
-## 🎯 **DEMO ACCOUNTS**
-
-### **Test Users**
-- **Customer**: customer@demo.com / password123
-- **Provider**: provider@demo.com / password123
 
 ## 🌐 **DEPLOYMENT READY**
 

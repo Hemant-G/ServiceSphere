@@ -116,10 +116,6 @@ const NewBooking = () => {
                 />
                 <span className="ml-3 text-sm font-medium text-card-foreground">Pay with Cash</span>
               </label>
-              <label className="flex items-center p-3 border border-border rounded-md cursor-pointer has-[:checked]:bg-primary/10 has-[:checked]:border-primary">
-                <input type="radio" value="card" {...register('paymentMethod')} className="h-4 w-4 text-primary border-input focus:ring-ring" />
-                <span className="ml-3 text-sm font-medium text-card-foreground">Pay with Card (Online)</span>
-              </label>
             </div>
           </div>
 

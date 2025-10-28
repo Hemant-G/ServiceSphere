@@ -17,8 +17,12 @@ const serviceSchema = new mongoose.Schema({
   title: {
     type: String,
     required: [true, 'Please provide a service title'],
+    // Using TitleCase for labels to match frontend display, but validation can be flexible.
     enum: {
-      values: PREDEFINED_SERVICES,
+      values: [
+        'Cleaning', 'Plumbing', 'Electrical', 'Painting', 'Gardening', 'Carpentry',
+        'Appliance Repair', 'Moving', 'Photography', 'Tutoring', 'Beauty', 'Fitness', 'Other'
+      ],
       message: 'Service title is not supported'
     }
   },
