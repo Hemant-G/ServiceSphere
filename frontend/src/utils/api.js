@@ -44,15 +44,9 @@ export const authAPI = {
   signup: (userData) => api.post('/auth/signup', userData),
   login: (credentials) => api.post('/auth/login', credentials),
   getMe: () => api.get('/auth/me'),
-  updateProfile: (profileData) => {
-    if (profileData instanceof FormData) {
-      // This is an avatar upload
-      return api.put('/auth/avatar', profileData, { headers: { 'Content-Type': 'multipart/form-data' } });
-    } else {
-      // This is a regular profile data update
-      return api.put('/auth/profile', profileData);
-    }
-  },
+  updateProfile: (formData) => api.put('/auth/profile', formData, { 
+    headers: { 'Content-Type': 'multipart/form-data' } 
+  }),
   changePassword: (passwordData) => api.put('/auth/change-password', passwordData),
   getUserProfile: (userId) => api.get(`/auth/users/${userId}`),
 };

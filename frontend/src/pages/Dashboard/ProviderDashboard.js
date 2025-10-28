@@ -13,6 +13,7 @@ const ServiceFormModal = ({ serviceToEdit, onClose, onServiceCreated }) => {
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [duration, setDuration] = useState(60);
   const [predefinedServices, setPredefinedServices] = useState([]);
   const { createService, updateService, servicesAPI } = useService();
   const isEditMode = !!serviceToEdit;
@@ -39,12 +40,19 @@ const ServiceFormModal = ({ serviceToEdit, onClose, onServiceCreated }) => {
       setCategory(serviceToEdit.category);
       setDescription(serviceToEdit.description);
       setPrice(serviceToEdit.price);
+      setDuration(serviceToEdit.duration);
     }
   }, [servicesAPI, serviceToEdit, isEditMode]);
 
+  const handleTitleChange = (e) => {
+    const selectedTitle = e.target.value;
+    setTitle(selectedTitle);
+    setCategory(selectedTitle);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const serviceData = { title, description, category, price };
+    const serviceData = { title, description, category, price, duration };
     const result = isEditMode 
       ? await updateService(serviceToEdit._id, serviceData)
       : await createService(serviceData);
@@ -61,7 +69,7 @@ const ServiceFormModal = ({ serviceToEdit, onClose, onServiceCreated }) => {
       <div className="bg-card p-8 rounded-lg shadow-xl w-full max-w-md border border-border">
         <h2 className="text-2xl font-bold mb-6 text-card-foreground">{isEditMode ? 'Edit Service' : 'Add New Service'}</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <select value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 border border-input bg-input rounded" required>
+          <select value={title} onChange={handleTitleChange} className="w-full p-2 border border-input bg-input rounded" required>
             <option value="" >Select a Service</option>
             {predefinedServices.map(service => (
               <option key={service} value={service}>
@@ -71,6 +79,7 @@ const ServiceFormModal = ({ serviceToEdit, onClose, onServiceCreated }) => {
           </select>
           <textarea placeholder="Description" value={description} onChange={e => setDescription(e.target.value)} className="w-full p-2 border border-input bg-input rounded" required />
           <input type="number" placeholder="Price" value={price} onChange={e => setPrice(e.target.value)} className="w-full p-2 border border-input bg-input rounded" required />
+          <input type="number" placeholder="Duration (in minutes)" value={duration} onChange={e => setDuration(e.target.value)} className="w-full p-2 border border-input bg-input rounded" required />
           <div className="flex justify-end space-x-4">
             <button type="button" onClick={onClose} className="px-4 py-2 rounded text-secondary-foreground border border-border hover:bg-secondary">
               Cancel

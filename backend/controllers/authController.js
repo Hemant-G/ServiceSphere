@@ -157,18 +157,18 @@ const getMe = async (req, res, next) => {
 // @access  Private
 const updateProfile = async (req, res, next) => {
   try {
-    const { name, email, phone, address } = req.body;
+    const { name, phone, address } = req.body;
     const updateData = {};
 
     if (name) updateData.name = name;
-    if (email) updateData.email = email;
     if (phone) updateData.phone = phone;
     if (address) {
+      const parsedAddress = typeof address === 'string' ? JSON.parse(address) : address;
       // Use dot notation to update nested address fields without overwriting the whole object
       // This prevents fields from being wiped if only partial address is sent
-      Object.keys(address).forEach(key => {
-        if (address[key]) {
-          updateData[`address.${key}`] = address[key];
+      Object.keys(parsedAddress).forEach(key => {
+        if (parsedAddress[key]) {
+          updateData[`address.${key}`] = parsedAddress[key];
         }
       });
     }
@@ -240,53 +240,6 @@ const changePassword = async (req, res, next) => {
   }
 };
 
-// @desc    Update user avatar
-// @route   PUT /api/auth/avatar
-// @access  Private
-const updateAvatar = async (req, res, next) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please upload an image file'
-      });
-    }
-
-    // Upload avatar to Cloudinary
-    let avatarObj = null;
-    try {
-      const result = await uploadBufferToCloudinary(req.file.buffer, req.file.originalname, `avatars/${req.user.id}`);
-      avatarObj = { url: result.secure_url, public_id: result.public_id };
-    } catch (e) {
-      return res.status(500).json({ success: false, message: 'Failed to upload avatar' });
-    }
-
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      { $set: { avatar: avatarObj } },
-      { new: true, runValidators: true }
-    );
-
-    res.json({
-      success: true,
-      message: 'Avatar updated successfully',
-      data: {
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          phone: user.phone,
-          address: user.address,
-          avatar: user.avatar
-        }
-      }
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
 // @desc    Get public user profile
 // @route   GET /api/auth/users/:id
 // @access  Public
@@ -322,6 +275,5 @@ module.exports = {
   getMe,
   updateProfile,
   changePassword,
-  updateAvatar,
   getUserProfile,
 };

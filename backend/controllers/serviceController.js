@@ -129,7 +129,11 @@ const getServiceById = async (req, res, next) => {
 const createService = async (req, res, next) => {
   try {
     req.body.provider = req.user.id;
-    const { address, ...serviceData } = req.body;
+    const { address, title, ...restOfBody } = req.body;
+
+    // The category should be the same as the title.
+    // Duration is now expected from the request body.
+    const serviceData = { title, category: title, ...restOfBody };
 
     // If an address is provided in the form, use it.
     if (address) {

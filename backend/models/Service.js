@@ -40,8 +40,8 @@ const serviceSchema = new mongoose.Schema({
   },
   images: [String],
   duration: {
-    type: Number, // duration in minutes
-    default: 60
+    type: Number, // duration in minutes,
+    required: [true, 'Please provide a duration for the service']
   },
   availability: {
     type: String,
