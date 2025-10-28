@@ -199,21 +199,14 @@ const updateProfile = async (req, res, next) => {
     // especially after an avatar-only upload.
     const user = await User.findById(req.user.id);
 
+    // Convert the Mongoose document to a plain JavaScript object before sending
+    const userObject = user.toObject();
+
     // Send back the full, updated user object.
     res.json({
       success: true,
       message: 'Profile updated successfully',
-      data: {
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          phone: user.phone,
-          address: user.address,
-          avatar: user.avatar
-        }
-      }
+      data: { user: userObject }
     });
   } catch (error) {
     next(error);
