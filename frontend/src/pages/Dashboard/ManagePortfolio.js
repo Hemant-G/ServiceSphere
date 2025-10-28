@@ -6,21 +6,22 @@ import { servicesAPI } from '../../utils/api';
 import { FiImage } from 'react-icons/fi';
 import { resolveImageUrl } from '../../utils/media';
 
+const FALLBACK_SERVICES = [
+  'cleaning',
+  'plumbing',
+  'Electrician',
+  'gardening',
+  'Painting',
+  'Carpentry',
+  'Pest Control',
+  'Appliance Repair'
+];
+
 const PortfolioFormModal = ({ onClose, onPortfolioItemCreated }) => {
   const { register, handleSubmit, formState: { errors }, reset } = useForm();
   const { createPortfolioItem } = usePortfolio();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [predefinedServices, setPredefinedServices] = useState([]);
-  const FALLBACK_SERVICES = [
-    'cleaning',
-    'plumbing',
-    'Electrician',
-    'gardening',
-    'Painting',
-    'Carpentry',
-    'Pest Control',
-    'Appliance Repair'
-  ];
 
   useEffect(() => {
     const fetchPredefinedServices = async () => {
@@ -165,7 +166,7 @@ const PortfolioFormModal = ({ onClose, onPortfolioItemCreated }) => {
 };
 
 const EditPortfolioModal = ({ item, onClose, onPortfolioItemUpdated }) => {
-  const { register, handleSubmit, formState: { errors }, reset } = useForm({
+  const { register, handleSubmit } = useForm({
     defaultValues: {
       title: item.title,
       description: item.description,
