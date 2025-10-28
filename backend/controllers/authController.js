@@ -183,12 +183,20 @@ const updateProfile = async (req, res, next) => {
       }
     }
 
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      { $set: updateData },
-      { new: true, runValidators: true, context: 'query' }
-    );
+    // If there's data to update (text fields or avatar), perform the update.
+    if (Object.keys(updateData).length > 0) {
+      await User.findByIdAndUpdate(
+        req.user.id,
+        { $set: updateData },
+        { new: true, runValidators: true, context: 'query' }
+      );
+    }
 
+    // Always fetch the latest user data to ensure the response is up-to-date,
+    // especially after an avatar-only upload.
+    const user = await User.findById(req.user.id);
+
+    // Send back the full, updated user object.
     res.json({
       success: true,
       message: 'Profile updated successfully',

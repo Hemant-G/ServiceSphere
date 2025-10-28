@@ -167,7 +167,7 @@ const Signup = () => {
             {/* Phone Field */}
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-card-foreground">
-                Phone Number (Optional)
+                Phone Number
               </label>
               <div className="mt-1">
                 <input
