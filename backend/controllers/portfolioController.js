@@ -130,7 +130,7 @@ const getProviderPortfolio = async (req, res, next) => {
 // @access  Private (Provider only)
 const getMyPortfolio = async (req, res, next) => {
   try {
-    const portfolioItems = await PortfolioItem.find({ provider: req.user.id })
+    const portfolioItems = await PortfolioItem.find({ provider: req.user.id, isActive: true })
       .populate('provider', 'name email phone avatar')
       .sort({ createdAt: -1 });
 
